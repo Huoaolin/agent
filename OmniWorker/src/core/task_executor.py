@@ -42,21 +42,20 @@ class TaskExecutor:
         step_recorder: StepRecorder | None,
         interaction_handler: InteractionHandler,
         *,
-        max_steps: int = 5,
+        max_steps: int = 20,
         llm: LLMService | None = None,
         tool_agent: ToolAgent | None = None,
     ) -> None:
         self.agent = tool_agent or ToolAgent(parser_type=os.getenv("TOOL_AGENT_PARSER", "rule_based"))
         self.job_id = str(uuid.uuid4())
         log_file_path = os.path.join("tasks", self.job_id, "task_steps.log")
-        self.logger = MockLogger(log_file_path)
+        self.logger = logger or MockLogger(log_file_path)
 
         self.llm = llm or LLMService()
         self.interaction_handler = interaction_handler
         self.max_steps = max_steps
         self.step_count = 0
 
-        # 重新创建 StepRecorder，保证日志与 job_id 对齐
         self.step_recorder = step_recorder or StepRecorder(self.job_id)
         self.logger.info(f"Generated job_id: {self.job_id}")
         self.logger.info(f"Registered tools: {self.agent.list_tools()}")

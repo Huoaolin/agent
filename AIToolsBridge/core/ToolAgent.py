@@ -1,4 +1,3 @@
-# TestAIToolsBridge/core/ToolAgent.py
 import os
 from typing import Any, Dict, Optional
 
@@ -37,15 +36,10 @@ class ToolAgent:
         )
 
     def register_tool(self, tool_config: Dict[str, Any]):
-        """注册工具
+        """注册工具"""
 
-        :param tool_config: 工具配置字典
-        """
-        try:
-            tool = self.registry.factory.create_tool(tool_config)
-            self.registry.register_tool(tool)
-        except Exception as e:
-            raise
+        tool = self.registry.factory.create_tool(tool_config)
+        self.registry.register_tool(tool)
             
     def remove_tool(self, tool_id):
         """删除工具
@@ -63,7 +57,6 @@ class ToolAgent:
         """
 
         try:
-            # 解析查询,分析使用哪个工具,分析参数是什么
             parsed_result = self.parser.parse(query)
             tool_name = parsed_result["tool"]
             params = parsed_result["params"]
