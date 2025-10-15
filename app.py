@@ -6,7 +6,6 @@ import gradio as gr
 from OmniWorker.src.core.input_processor import InputProcessor
 from OmniWorker.src.core.task_planner import TaskPlanner
 from OmniWorker.src.core.task_executor import TaskExecutor
-from OmniWorker.src.core.step_recorder import StepRecorder
 from OmniWorker.src.core.interaction_handler import InteractionHandler
 import threading
 import glob
@@ -52,12 +51,11 @@ def process_query(query):
     #  '2. 根据目标读者确定报告的用途，如购车参考、竞品分析或市场趋势研究。',
     #  '3. 将结果写入到markdown文件里。',]
 
-    step_recorder = StepRecorder("test_task")
     interaction_handler = InteractionHandler()
-    executor = TaskExecutor(None, step_recorder, interaction_handler)
+    executor = TaskExecutor(None, None, interaction_handler)
     output_dir = "./tasks"
-    log_file_path = os.path.join(output_dir, str(executor.job_id), "task_steps.log")
     task_dir = os.path.join(output_dir, str(executor.job_id))
+    log_file_path = os.path.join(task_dir, "task_steps.log")
     os.makedirs(task_dir, exist_ok=True)
 
     state = {"current_step": 0, "results": {}, "steps": steps, "query": query}

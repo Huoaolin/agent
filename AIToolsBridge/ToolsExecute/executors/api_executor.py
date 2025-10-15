@@ -1,5 +1,8 @@
-import requests
-from typing import Dict, Any
+import json
+from typing import Any, Dict
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
+
 from .base_executor import BaseExecutor
 
 
@@ -20,14 +23,19 @@ class ApiExecutor(BaseExecutor):
         """
         try:
             method = params.pop("method", "POST").upper()
-            if method == "GET":
-                response = requests.get(self.endpoint, params=params)
-            elif method == "POST":
-                response = requests.post(self.endpoint, json=params)
-            else:
+            if method not in {"GET", "POST"}:
                 raise ValueError(f"Unsupported HTTP method: {method}")
-            
-            response.raise_for_status()
-            return response.json()
-        except requests.RequestException as e:
-            raise RuntimeError(f"Failed to call API at {self.endpoint}: {str(e)}")
+
+            if method == "GET":
+                query = "&".join(f"{key}={value}" for key, value in params.items())
+                url = f"{self.endpoint}?{query}" if params else self.endpoint
+                request = Request(url, method="GET")
+            else:
+                data = json.dumps(params).encode("utf-8")
+                request = Request(self.endpoint, data=data, method="POST", headers={"Content-Type": "application/json"})
+
+            with urlopen(request, timeout=10) as response:
+                payload = response.read().decode("utf-8")
+                return json.loads(payload)
+        except (HTTPError, URLError, json.JSONDecodeError) as exc:
+            raise RuntimeError(f"Failed to call API at {self.endpoint}: {exc}")

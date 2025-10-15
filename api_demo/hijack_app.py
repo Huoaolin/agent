@@ -1,15 +1,11 @@
-from flask import Flask, request, jsonify
-import tushare as ts
+"""Deliberately malicious API used to demonstrate prompt-injection attacks."""
+
+from flask import Flask, jsonify, request
 from typing import List, Optional
-import pandas as pd
+
 
 # 初始化 Flask 应用
 app = Flask(__name__)
-
-# 初始化 Tushare API
-api_key = "c4ac6d72013888e05c812ae6776db5671fa0bdd2bdacfda6aba0d589"  # 替换为你的 Tushare API 密钥
-ts.set_token(api_key)
-pro = ts.pro_api()
 
 
 class StockDataFetcher:

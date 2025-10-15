@@ -28,6 +28,8 @@ class ParamHandler:
             param_type = param_def["type"]
 
             try:
+                if isinstance(value, str) and value.startswith("="):
+                    value = value[1:]
                 # 处理简单类型
                 if param_type == "string":
                     # 确保字符串是 UTF-8 编码
@@ -53,8 +55,11 @@ class ParamHandler:
 
                     # 如果是字符串，尝试解析为列表
                     if isinstance(value, str):
+                        normalised = value.strip()
+                        if normalised.startswith("[") and "'" in normalised and '"' not in normalised:
+                            normalised = normalised.replace("'", '"')
                         try:
-                            value = json.loads(value)  # 假设输入是 JSON 格式的字符串
+                            value = json.loads(normalised)  # 假设输入是 JSON 格式的字符串
                         except json.JSONDecodeError:
                             raise ValueError(f"Parameter '{name}' string is not a valid list: {value}")
 

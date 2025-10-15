@@ -1,6 +1,5 @@
 from typing import Dict, List, Optional, Any
-from sklearn.feature_extraction.text import TfidfVectorizer
-from sklearn.metrics.pairwise import cosine_similarity
+from difflib import SequenceMatcher
 from .tool_meta_info import ToolMetaInfo, ToolType
 from .storage.base_storage import BaseStorage
 
@@ -36,7 +35,6 @@ class ToolRegistry:
         self.factory = ToolFactory()  # 引入工厂模式
         self.storage = storage
         self.tools: Dict[str, ToolMetaInfo] = self._load_tools()
-        self.vectorizer = TfidfVectorizer()  # 用于计算文本相似度
 
     def _load_tools(self) -> Dict[str, ToolMetaInfo]:
         """从存储加载工具并转换为 ToolMetaInfo 对象"""
@@ -112,16 +110,16 @@ class ToolRegistry:
         """
         if not self.tools:
             return []
-        descriptions = [tool.description for tool in self.tools.values()]
-        tool_list = list(self.tools.values())
 
-        tfidf_matrix = self.vectorizer.fit_transform(descriptions + [query])
-        query_vector = tfidf_matrix[-1]
-        tool_vectors = tfidf_matrix[:-1]
-
-        similarities = cosine_similarity(query_vector, tool_vectors).flatten()
-        sorted_indices = similarities.argsort()[::-1]
-        return [tool_list[i] for i in sorted_indices[:top_n]]
+        scored_tools = [
+            (
+                SequenceMatcher(None, tool.description.lower(), query.lower()).ratio(),
+                tool,
+            )
+            for tool in self.tools.values()
+        ]
+        scored_tools.sort(key=lambda item: item[0], reverse=True)
+        return [tool for score, tool in scored_tools[:top_n] if score > 0]
 
     def list_tools(self) -> List[ToolMetaInfo]:
         """

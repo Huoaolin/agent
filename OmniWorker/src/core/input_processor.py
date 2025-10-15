@@ -8,14 +8,13 @@ class InputProcessor:
     def __init__(self):
         self.llm = LLMService()
 
-    def extract_json_list(self, raw_input_string):
+    def extract_json_list(self, raw_input_string: str) -> str:
         pattern = r'\[.*?\]'
         matches = re.findall(pattern, raw_input_string, re.DOTALL)
         if matches:
             return matches[0]
-        else:
-            print(f"未能在 LLM 输出中提取 JSON 列表: {raw_result}")
-            return json.dumps(["用户输入理解错误，终止任务"])
+        print(f"未能在 LLM 输出中提取 JSON 列表: {raw_input_string}")
+        return json.dumps(["用户输入理解错误，终止任务"])
 
     def process(self, query: str) -> List[str]:
         """Process user input into a list of actionable steps as plain text."""
