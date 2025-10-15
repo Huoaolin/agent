@@ -1,14 +1,22 @@
 # TestAIToolsBridge/core/ToolAgent.py
-from typing import Dict, Any, Optional
+import os
+from typing import Any, Dict, Optional
+
 from ..QueryParser.parser import QueryParserFactory
+from ..ToolsExecute.services.param_handler import ParamHandler
+from ..ToolsExecute.services.tool_executor import ToolExecutor
 from ..ToolsHub.tools.registry import ToolRegistry
 from ..ToolsHub.tools.storage.json_storage import JsonStorage
-from ..ToolsExecute.services.tool_executor import ToolExecutor
-from ..ToolsExecute.services.param_handler import ParamHandler
 
 
 class ToolAgent:
-    def __init__(self, storage_path: str = "AIToolsBridge/ToolsHub/ToolData/tools.json", api_key: Optional[str] = None):
+    def __init__(
+        self,
+        storage_path: str = "AIToolsBridge/ToolsHub/ToolData/tools.json",
+        *,
+        api_key: Optional[str] = None,
+        parser_type: Optional[str] = None,
+    ):
         """
         初始化 ToolAgent
 
@@ -21,10 +29,11 @@ class ToolAgent:
         self.registry = ToolRegistry(self.storage)
 
         # 初始化 NLP 解析器
+        parser_choice = parser_type or os.getenv("TOOL_AGENT_PARSER", "rule_based")
         self.parser = QueryParserFactory.create_parser(
-            "nlp_model",
+            parser_choice,
             self.registry,
-            api_key=api_key or "eb48d776240f4c42aa35522bfd4e6c31"
+            api_key=api_key,
         )
 
     def register_tool(self, tool_config: Dict[str, Any]):

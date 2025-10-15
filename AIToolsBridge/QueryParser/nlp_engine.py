@@ -33,11 +33,15 @@
 #         return "unknown"
 
 
-from typing import Dict, Any, Optional, List
-import requests  # 假设使用 HTTP API 调用 LLM
+from typing import Any, Dict, List, Optional
 import json
-from openai import OpenAI
+import os
 import re
+
+try:  # Optional dependency; the offline demo does not require openai
+    from openai import OpenAI  # type: ignore
+except Exception:  # pragma: no cover - best effort guard
+    OpenAI = None  # type: ignore
 
 
 class NLPEngine:
@@ -48,15 +52,16 @@ class NLPEngine:
         :param model_path: 本地模型路径（可选，未实现）
         :param api_key: LLM API 的密钥（若使用远程 API）
         """
-        # self.model_path = model_path
-        self.api_key = 'sk-6f15756855394f00a0902af819ae9f4a'
-        self.base_url = "https://api.deepseek.com"
-        self.model = "deepseek-chat"
+        self.api_key = api_key or os.getenv("LLM_API_KEY")
+        self.base_url = os.getenv("LLM_BASE_URL", "https://api.deepseek.com")
+        self.model = os.getenv("LLM_MODEL", "deepseek-chat")
+        self._client = None
 
-        # if model_path:
-        #     raise NotImplementedError("Local NLP model loading not implemented yet")
-        # elif not api_key:
-        #     raise ValueError("API key is required for remote LLM inference")
+        if OpenAI is not None and self.api_key:
+            try:
+                self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
+            except Exception:
+                self._client = None
 
     def process(self, text: str) -> str:
         """预处理文本"""
@@ -212,29 +217,24 @@ class NLPEngine:
         :return: LLM 返回的文本
         """
         # 初始化 Azure OpenAI 客户端
-        client_gpt = OpenAI(
-            api_key=self.api_key,
-            base_url=self.base_url
-        )
+        if self._client is None:
+            # Rule-based fallback keeps demo functional without network access.
+            if "entities" in prompt.lower():
+                return '{"entities": {}}'
+            # Intent selection fallback: pick first candidate name.
+            match = re.search(r"-\s*(\w+):", prompt)
+            if match:
+                return match.group(1)
+            return ""
 
-        try:
-            # 调用 OpenAI API
-            response = client_gpt.chat.completions.create(
-                model=self.model,  # model = "deployment_name".
-                messages=[
-                    {"role": "system", "content": "Assistant is a large language model trained by OpenAI."},
-                    {"role": "user", "content": prompt}
-                ]
-            )
-            # 返回生成的文本
-            return response.choices[0].message.content
-        except Exception as e:
-            # 临时占位返回（无真实 API 时）
-            if "length of string" in prompt:
-                return '{"entities": {"text": "hello"}}'
-            elif "api_test with data" in prompt:
-                return '{"entities": {"data": "test_data"}}'
-            raise RuntimeError(f"Failed to call LLM API: {str(e)}")
+        response = self._client.chat.completions.create(
+            model=self.model,
+            messages=[
+                {"role": "system", "content": "Assistant is a large language model trained by OpenAI."},
+                {"role": "user", "content": prompt},
+            ],
+        )
+        return response.choices[0].message.content
 
     # def _call_llm(self, prompt: str) -> str:
     #     """调用外部 LLM API（占位实现）
