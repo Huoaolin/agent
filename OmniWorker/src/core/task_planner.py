@@ -46,4 +46,11 @@ class TaskPlanner:
         ).format(query=query, task_desc=task_desc)
 
         response = self.llm.call(prompt)
-        return [step.strip() for step in response.split("\n") if step.strip()]
+        steps = [step.strip() for step in response.split("\n") if step.strip()]
+        if not steps:
+            steps = [
+                f"1. 解析任务目标：{query}",
+                "2. 调用必要的工具或接口以收集信息",
+                "3. 汇总信息并准备最终输出",
+            ]
+        return steps
